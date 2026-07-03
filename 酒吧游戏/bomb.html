@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数字炸弹 · 酒吧游戏</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root { --bg:#0f0a1e; --neon:#ff2e7e; --neon2:#17e6d4; --gold:#ffd447; --text:#f4f0ff; }
+  body {
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    background:radial-gradient(circle at 20% 10%,#2a1150 0%,var(--bg) 55%);
+    color:var(--text); min-height:100vh; display:flex; flex-direction:column;
+    align-items:center; padding:20px 16px 40px;
+  }
+  .back { align-self:flex-start; color:var(--neon2); text-decoration:none; font-size:14px; margin-bottom:8px; }
+  h1 {
+    font-size:clamp(24px,6vw,38px); letter-spacing:2px; text-align:center;
+    background:linear-gradient(90deg,var(--neon),var(--gold),var(--neon2));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .subtitle { opacity:.6; font-size:13px; margin-bottom:24px; letter-spacing:1px; }
+
+  .range {
+    font-size:15px; opacity:.8; margin-bottom:10px; letter-spacing:1px;
+  }
+  .range b { font-size:26px; color:var(--gold); }
+  .setup {
+    display:flex; align-items:center; gap:8px; margin-bottom:16px;
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12);
+    border-radius:14px; padding:12px 14px; flex-wrap:wrap; justify-content:center;
+  }
+  .setup label { font-size:13px; opacity:.75; }
+  .setup input {
+    width:74px; padding:9px; border-radius:9px; border:1px solid rgba(255,255,255,.2);
+    background:rgba(0,0,0,.25); color:var(--text); font-size:16px; text-align:center; outline:none;
+  }
+  .setup input:focus { border-color:var(--neon2); }
+  .setup .go {
+    padding:9px 16px; border-radius:9px; border:none; background:var(--gold);
+    color:#3a2600; font-weight:700; font-size:14px; cursor:pointer;
+  }
+  .setup .go:active { filter:brightness(.9); }
+  .display {
+    font-size:clamp(30px,9vw,54px); font-weight:800; margin:6px 0 22px;
+    background:linear-gradient(90deg,var(--neon2),var(--gold));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    min-height:60px;
+  }
+  .guess-row { display:flex; gap:10px; width:min(90vw,340px); margin-bottom:20px; }
+  .guess-row input {
+    flex:1; padding:14px; border-radius:12px; border:1px solid rgba(255,255,255,.2);
+    background:rgba(0,0,0,.25); color:var(--text); font-size:20px; text-align:center; outline:none;
+  }
+  .guess-row input:focus { border-color:var(--neon2); }
+  .guess-row button {
+    padding:0 22px; border-radius:12px; border:none; font-size:17px; font-weight:700;
+    background:var(--neon2); color:#05201d; cursor:pointer;
+  }
+  .guess-row button:active { filter:brightness(.9); }
+  .newgame {
+    padding:13px 30px; border-radius:12px; border:1px solid rgba(255,255,255,.25);
+    background:transparent; color:var(--text); font-size:15px; cursor:pointer;
+  }
+  .boom {
+    font-size:clamp(40px,14vw,90px); animation:boom .5s ease; margin:10px 0;
+  }
+  @keyframes boom { 0%{transform:scale(0);} 60%{transform:scale(1.3);} 100%{transform:scale(1);} }
+  .rules { margin-top:26px; font-size:12.5px; opacity:.55; text-align:center; line-height:1.9; max-width:320px; }
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← 返回游戏厅</a>
+  <h1>💣 数字炸弹</h1>
+  <div class="subtitle">NUMBER BOMB · 猜中的人喝酒</div>
+
+  <div class="setup">
+    <label>范围</label>
+    <input id="minInput" type="number" inputmode="numeric" value="1">
+    <span>—</span>
+    <input id="maxInput" type="number" inputmode="numeric" value="100">
+    <button class="go" id="setBtn">设定 / 重开</button>
+  </div>
+
+  <div class="range">当前范围 <b id="low">1</b> — <b id="high">100</b></div>
+  <div class="display" id="display">猜一个数字吧</div>
+
+  <div class="guess-row">
+    <input id="guessInput" type="number" inputmode="numeric" placeholder="?">
+    <button id="guessBtn">猜</button>
+  </div>
+  <button class="newgame" id="newBtn">🔄 用当前范围重开</button>
+
+  <div class="rules">
+    自己设定范围（比如 1–50 或 1–999），系统随机藏一个炸弹。<br>
+    轮流猜数字，范围自动缩小，猜中炸弹的人——喝！🍺
+  </div>
+
+<script>
+  let bomb, low, high, over, rangeMin, rangeMax;
+  const lowEl = document.getElementById("low");
+  const highEl = document.getElementById("high");
+  const display = document.getElementById("display");
+  const input = document.getElementById("guessInput");
+  const guessBtn = document.getElementById("guessBtn");
+  const minInput = document.getElementById("minInput");
+  const maxInput = document.getElementById("maxInput");
+
+  function newGame() {
+    // 读取自定义范围
+    let a = parseInt(minInput.value, 10);
+    let b = parseInt(maxInput.value, 10);
+    if (isNaN(a)) a = 1;
+    if (isNaN(b)) b = 100;
+    if (a > b) { const t = a; a = b; b = t; }        // 自动纠正大小写反
+    if (b - a < 1) b = a + 1;                          // 至少有 2 个数
+    rangeMin = a; rangeMax = b;
+    minInput.value = a; maxInput.value = b;
+
+    bomb = rangeMin + Math.floor(Math.random() * (rangeMax - rangeMin + 1));
+    low = rangeMin; high = rangeMax; over = false;
+    lowEl.textContent = low; highEl.textContent = high;
+    display.textContent = "猜一个数字吧";
+    display.className = "display";
+    input.value = ""; input.disabled = false; guessBtn.disabled = false;
+    input.min = low; input.max = high;
+    input.focus();
+  }
+
+  function guess() {
+    if (over) return;
+    const v = parseInt(input.value, 10);
+    if (isNaN(v)) return;
+    if (v < low || v > high) {
+      display.textContent = "要在 " + low + "–" + high + " 之间哦";
+      input.value = ""; return;
+    }
+    if (v === bomb) {
+      display.innerHTML = '<div class="boom">💥🍺</div>就是 ' + v + " ！喝酒！";
+      over = true; input.disabled = true; guessBtn.disabled = true;
+      return;
+    }
+    if (v < bomb) { low = v + 1; display.textContent = "太小了 ⬆️ 往大猜"; }
+    else { high = v - 1; display.textContent = "太大了 ⬇️ 往小猜"; }
+    lowEl.textContent = low; highEl.textContent = high;
+    input.min = low; input.max = high;
+    input.value = ""; input.focus();
+  }
+
+  guessBtn.onclick = guess;
+  input.addEventListener("keydown", e => { if (e.key === "Enter") guess(); });
+  document.getElementById("newBtn").onclick = newGame;
+  document.getElementById("setBtn").onclick = newGame;
+
+  newGame();
+</script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>酒吧游戏厅</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root { --bg:#0f0a1e; --neon:#ff2e7e; --neon2:#17e6d4; --gold:#ffd447; --text:#f4f0ff; }
+  body {
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    background:radial-gradient(circle at 20% 0%,#2a1150 0%,var(--bg) 55%);
+    color:var(--text); min-height:100vh; padding:40px 16px 60px;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .logo { font-size:clamp(34px,9vw,60px); letter-spacing:3px; text-align:center;
+    background:linear-gradient(90deg,var(--neon),var(--gold),var(--neon2));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 0 40px rgba(255,46,126,.3);
+  }
+  .tag { opacity:.6; font-size:14px; letter-spacing:4px; margin:6px 0 40px; }
+  .grid {
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:18px; width:min(92vw,640px);
+  }
+  .game-card {
+    position:relative; text-decoration:none; color:var(--text);
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+    border-radius:20px; padding:26px 18px; text-align:center;
+    backdrop-filter:blur(8px); transition:transform .15s ease, box-shadow .15s ease;
+    overflow:hidden;
+  }
+  .game-card::before {
+    content:""; position:absolute; inset:0; opacity:0; transition:opacity .2s;
+  }
+  .game-card:hover, .game-card:active { transform:translateY(-4px); }
+  .game-card .emoji { font-size:46px; display:block; margin-bottom:12px; }
+  .game-card .name { font-size:19px; font-weight:700; margin-bottom:4px; }
+  .game-card .desc { font-size:12.5px; opacity:.6; line-height:1.5; }
+  .c1:hover { box-shadow:0 10px 30px rgba(255,46,126,.35); border-color:var(--neon); }
+  .c2:hover { box-shadow:0 10px 30px rgba(23,230,212,.3); border-color:var(--neon2); }
+  .c3:hover { box-shadow:0 10px 30px rgba(255,212,71,.3); border-color:var(--gold); }
+  .c4:hover { box-shadow:0 10px 30px rgba(124,92,255,.35); border-color:#7c5cff; }
+  .c5:hover { box-shadow:0 10px 30px rgba(255,107,107,.35); border-color:#ff6b6b; }
+  .c6:hover { box-shadow:0 10px 30px rgba(255,212,71,.35); border-color:var(--gold); }
+  .c7:hover { box-shadow:0 10px 30px rgba(23,230,212,.35); border-color:var(--neon2); }
+  .c8:hover { box-shadow:0 10px 30px rgba(255,212,71,.35); border-color:var(--gold); }
+  .section-title { width:min(92vw,640px); text-align:left; font-size:15px; letter-spacing:2px;
+    opacity:.7; margin:6px 4px 2px; display:flex; align-items:center; gap:8px; }
+  .section-title::after { content:""; flex:1; height:1px; background:rgba(255,255,255,.12); }
+  .section-title .st-sub { font-size:11.5px; opacity:.6; letter-spacing:0; }
+  .footer { margin-top:46px; font-size:12px; opacity:.4; text-align:center; line-height:1.8; }
+</style>
+</head>
+<body>
+  <div class="logo">🍸 酒吧游戏厅</div>
+  <div class="tag">BAR&nbsp;&nbsp;GAME&nbsp;&nbsp;HOUSE</div>
+
+  <div class="section-title">🎮 桌面小游戏 <span class="st-sub">随时开玩</span></div>
+  <div class="grid">
+    <a class="game-card c1" href="转盘.html">
+      <span class="emoji">🎡</span>
+      <div class="name">幸运转盘</div>
+      <div class="desc">自定义名字，转到谁谁喝</div>
+    </a>
+    <a class="game-card c2" href="dice.html">
+      <span class="emoji">🎲</span>
+      <div class="name">摇骰子</div>
+      <div class="desc">比大小 · 豹子通杀</div>
+    </a>
+    <a class="game-card c3" href="truth-or-dare.html">
+      <span class="emoji">💋</span>
+      <div class="name">真心话大冒险</div>
+      <div class="desc">真心话+大冒险各100题</div>
+    </a>
+    <a class="game-card c4" href="bomb.html">
+      <span class="emoji">💣</span>
+      <div class="name">数字炸弹</div>
+      <div class="desc">1–100 猜中的人喝酒</div>
+    </a>
+  </div>
+
+  <div class="section-title">🤫 传阅开房类 <span class="st-sub">一台手机轮流看，各拿各的身份</span></div>
+  <div class="grid">
+    <a class="game-card c5" href="werewolf.html">
+      <span class="emoji">🐺</span>
+      <div class="name">狼人杀发牌</div>
+      <div class="desc">配置角色 · 自动发身份</div>
+    </a>
+    <a class="game-card c7" href="undercover.html">
+      <span class="emoji">🕵️</span>
+      <div class="name">谁是卧底</div>
+      <div class="desc">113组词库 · 找出卧底</div>
+    </a>
+    <a class="game-card c8" href="king.html">
+      <span class="emoji">👑</span>
+      <div class="name">国王游戏</div>
+      <div class="desc">抽号发令 · 38条指令</div>
+    </a>
+  </div>
+
+  <div class="section-title">📚 更多玩法 <span class="st-sub">选择困难就摇一个</span></div>
+  <div class="grid">
+    <a class="game-card c6" href="games-list.html">
+      <span class="emoji">🎊</span>
+      <div class="name">游戏大全</div>
+      <div class="desc">98种玩法 · 随机摇一个</div>
+    </a>
+  </div>
+
+  <div class="footer">
+    双击本页即可开局 · 手机电脑都能玩<br>
+    喝酒不开车，开车不喝酒 🚗
+  </div>
+</body>
+</html>
