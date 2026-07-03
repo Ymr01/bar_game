@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>国王游戏 · 酒吧游戏</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+  :root { --bg:#0f0a1e; --neon:#ff2e7e; --neon2:#17e6d4; --gold:#ffd447; --purple:#7c5cff; --text:#f4f0ff; }
+  body {
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    background:radial-gradient(circle at 20% 10%,#2a1150 0%,var(--bg) 55%);
+    color:var(--text); min-height:100vh; display:flex; flex-direction:column;
+    align-items:center; padding:20px 16px 40px;
+  }
+  .back { align-self:flex-start; color:var(--neon2); text-decoration:none; font-size:14px; margin-bottom:8px; }
+  h1 {
+    font-size:clamp(24px,6vw,38px); letter-spacing:2px; text-align:center;
+    background:linear-gradient(90deg,var(--gold),var(--neon),var(--purple));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .subtitle { opacity:.6; font-size:13px; margin-bottom:22px; letter-spacing:1px; text-align:center; }
+
+  .screen { width:min(94vw,460px); display:none; }
+  .screen.active { display:block; animation:fade .3s ease; }
+  @keyframes fade { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+
+  .panel { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+    border-radius:18px; padding:20px; backdrop-filter:blur(8px); }
+  .row { display:flex; align-items:center; justify-content:space-between; padding:13px 4px; }
+  .row .label { font-size:16px; }
+  .row .label small { display:block; opacity:.5; font-size:11.5px; }
+  .stepper { display:flex; align-items:center; gap:12px; }
+  .stepper button { width:36px; height:36px; border-radius:9px; border:1px solid rgba(255,255,255,.2);
+    background:rgba(0,0,0,.25); color:var(--text); font-size:20px; cursor:pointer; }
+  .stepper button:active { filter:brightness(1.4); }
+  .stepper .val { min-width:26px; text-align:center; font-size:20px; font-weight:700; }
+  .big-btn { width:100%; padding:16px; margin-top:16px; border-radius:14px; border:none;
+    font-size:18px; font-weight:800; letter-spacing:2px; cursor:pointer; color:#fff;
+    background:linear-gradient(135deg,var(--gold),var(--neon)); box-shadow:0 6px 18px rgba(255,46,126,.4); }
+  .big-btn:active { transform:scale(.98); }
+  .hint { font-size:12px; opacity:.5; text-align:center; margin-top:10px; line-height:1.7; }
+
+  /* 传阅卡片 */
+  .pass-info { text-align:center; margin-bottom:18px; }
+  .pass-info .who { font-size:clamp(20px,6vw,28px); font-weight:800; margin-bottom:6px; }
+  .pass-info .prog { font-size:14px; opacity:.6; }
+  .card-flip { perspective:1200px; width:100%; height:min(52vh,380px); cursor:pointer; }
+  .card-inner { position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; }
+  .card-inner.revealed { transform:rotateY(180deg); }
+  .card-face { position:absolute; inset:0; backface-visibility:hidden; border-radius:22px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center; }
+  .card-front { background:linear-gradient(160deg,#2a1150,#150a2e); border:2px solid var(--purple);
+    box-shadow:0 0 30px rgba(124,92,255,.3); }
+  .card-front .tap-ico { font-size:60px; margin-bottom:16px; }
+  .card-front .tap-txt { font-size:18px; opacity:.85; }
+  .card-front .tap-sub { font-size:13px; opacity:.5; margin-top:8px; }
+  .card-back { background:linear-gradient(160deg,#1a1030,#2a1150); border:2px solid var(--gold);
+    transform:rotateY(180deg); box-shadow:0 0 40px rgba(255,212,71,.3); }
+  .card-back.king { border-color:var(--gold); background:linear-gradient(160deg,#3a2600,#2a1150); }
+  .card-back .my-num { font-size:clamp(60px,20vw,120px); font-weight:800; color:var(--gold); line-height:1; }
+  .card-back .num-label { font-size:15px; opacity:.7; margin-top:14px; }
+  .card-back .king-crown { font-size:70px; margin-bottom:8px; }
+  .card-back .king-txt { font-size:clamp(26px,8vw,38px); font-weight:800; color:var(--gold); }
+  .card-back .king-sub { font-size:14px; opacity:.75; margin-top:12px; line-height:1.6; max-width:280px; }
+  .next-btn { width:100%; padding:15px; margin-top:16px; border-radius:14px; border:none;
+    font-size:17px; font-weight:700; cursor:pointer; color:#05201d; background:var(--neon2); visibility:hidden; }
+  .next-btn.show { visibility:visible; animation:fade .3s ease; }
+  .next-btn:active { filter:brightness(.9); }
+
+  /* 国王发令 */
+  .king-panel { text-align:center; }
+  .king-panel .kp-title { font-size:18px; margin-bottom:8px; }
+  .king-panel .kp-crown { font-size:56px; margin-bottom:6px; }
+  .order-card { background:linear-gradient(160deg,#2a1150,#150a2e); border:2px solid var(--gold);
+    border-radius:18px; padding:26px 20px; margin:16px 0; min-height:120px;
+    display:flex; align-items:center; justify-content:center; font-size:clamp(18px,5vw,22px);
+    font-weight:600; line-height:1.6; box-shadow:0 0 30px rgba(255,212,71,.2); }
+  .order-card .num-tag { color:var(--gold); font-weight:800; }
+  .draw-btn { width:100%; padding:15px; border-radius:14px; border:none; cursor:pointer;
+    font-size:17px; font-weight:800; color:#fff; background:linear-gradient(135deg,var(--purple),var(--neon)); }
+  .draw-btn:active { transform:scale(.98); }
+  .secondary-btn { width:100%; padding:14px; margin-top:12px; border-radius:14px;
+    border:1px solid rgba(255,255,255,.25); background:transparent; color:var(--text); font-size:15px; cursor:pointer; }
+  .secondary-btn:active { filter:brightness(1.3); }
+  .self-note { font-size:12.5px; opacity:.55; margin-top:8px; line-height:1.6; }
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← 返回游戏厅</a>
+  <h1>👑 国王游戏</h1>
+  <div class="subtitle">单机传阅 · 抽号发号施令</div>
+
+  <!-- 屏幕1：配置 -->
+  <div class="screen active" id="setupScreen">
+    <div class="panel">
+      <div class="row">
+        <div class="label">总人数<small>1人当国王，其余抽号</small></div>
+        <div class="stepper">
+          <button id="minus">−</button>
+          <span class="val" id="valPlayers">5</span>
+          <button id="plus">+</button>
+        </div>
+      </div>
+    </div>
+    <button class="big-btn" id="startBtn">开始抽签</button>
+    <div class="hint">
+      每人依次看自己抽到的号码，其中一人抽到国王。<br>
+      国王看不到谁是几号，喊出指令（如「3号亲一下5号」），<br>
+      被点到号的人必须执行，不做就罚酒。
+    </div>
+  </div>
+
+  <!-- 屏幕2：传阅 -->
+  <div class="screen" id="passScreen">
+    <div class="pass-info">
+      <div class="who" id="passWho">把手机传给第 1 个人</div>
+      <div class="prog" id="passProg"></div>
+    </div>
+    <div class="card-flip" id="cardFlip">
+      <div class="card-inner" id="cardInner">
+        <div class="card-face card-front">
+          <div class="tap-ico">👆</div>
+          <div class="tap-txt">轻触卡片，查看你的号码</div>
+          <div class="tap-sub">确认周围没人偷看</div>
+        </div>
+        <div class="card-face card-back" id="cardBack">
+          <div id="backContent"></div>
+        </div>
+      </div>
+    </div>
+    <button class="next-btn" id="nextBtn">我记住了，下一位 →</button>
+  </div>
+
+  <!-- 屏幕3：国王发令 -->
+  <div class="screen" id="kingScreen">
+    <div class="panel king-panel">
+      <div class="kp-crown">👑</div>
+      <div class="kp-title">国王发号施令</div>
+      <div class="order-card" id="orderCard">点下面按钮，抽一条指令</div>
+      <button class="draw-btn" id="drawBtn">🎲 抽一条指令</button>
+      <div class="self-note">也可以自己即兴发挥，指定几号做什么。<br>号码范围：1 ~ <span id="maxNum">4</span></div>
+    </div>
+    <button class="secondary-btn" id="newRoundBtn">🔄 重新抽号（换国王）</button>
+    <button class="secondary-btn" id="backToSetupBtn">⚙️ 返回修改人数</button>
+  </div>
+
+<script>
+// PLACEHOLDER_SCRIPT
+// 指令库：{A} {B} 会替换成随机的两个不同号码（都不是国王自己）
+// 分单人指令(只用{A})和双人互动(用{A}{B})
+const ORDERS_SINGLE = [
+  "{A}号 唱一首歌的副歌部分",
+  "{A}号 学三种动物的叫声",
+  "{A}号 做10个深蹲",
+  "{A}号 原地转5圈再走直线",
+  "{A}号 用夸张的表情自拍一张",
+  "{A}号 说一句最肉麻的土味情话",
+  "{A}号 模仿一个明星的经典动作",
+  "{A}号 自罚一杯",
+  "{A}号 讲一个自己的糗事",
+  "{A}号 现场跳15秒舞",
+  "{A}号 用屁股写自己的名字",
+  "{A}号 学婴儿哭10秒",
+  "{A}号 说一段绕口令",
+  "{A}号 对着手机唱生日快乐",
+  "{A}号 做一个鬼脸保持10秒",
+  "{A}号 公开手机最近一张照片",
+  "{A}号 真心话：说出你的暗恋对象特征",
+  "{A}号 表演醉酒走路",
+  "{A}号 用假音唱一句高音",
+  "{A}号 学一段广场舞"
+];
+const ORDERS_PAIR = [
+  "{A}号 和 {B}号 对视10秒不许笑",
+  "{A}号 给 {B}号 一个真诚的赞美",
+  "{A}号 喂 {B}号 喝一口酒",
+  "{A}号 和 {B}号 合唱一句情歌",
+  "{A}号 帮 {B}号 捶背30秒",
+  "{A}号 和 {B}号 玩3局石头剪刀布，输的喝",
+  "{A}号 对 {B}号 说一句表白台词",
+  "{A}号 和 {B}号 背靠背站起来",
+  "{A}号 学 {B}号 说话的样子",
+  "{A}号 和 {B}号 交换一件配饰",
+  "{A}号 猜 {B}号 手机屏保是什么，猜错自罚",
+  "{A}号 和 {B}号 一起自拍一张搞怪合照",
+  "{A}号 给 {B}号 讲个笑话，逗不笑就喝",
+  "{A}号 和 {B}号 比腕力，输的喝",
+  "{A}号 模仿 {B}号 的一个习惯动作",
+  "{A}号 和 {B}号 深情对唱10秒",
+  "{A}号 握着 {B}号 的手说谢谢你",
+  "{A}号 和 {B}号 同时喊出对方的优点"
+];
+
+const $ = id => document.getElementById(id);
+let players = 5;
+let deck = [];   // 每人一张：数字号码，或 "king"
+let idx = 0;
+let maxNum = 4;  // 非国王的最大号码
+
+$("plus").onclick = () => { players = Math.min(20, players+1); $("valPlayers").textContent = players; };
+$("minus").onclick = () => { players = Math.max(2, players-1); $("valPlayers").textContent = players; };
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+function buildDeck() {
+  // 1个国王 + (players-1)个号码
+  maxNum = players - 1;
+  const arr = ["king"];
+  for (let i=1;i<=maxNum;i++) arr.push(i);
+  return shuffle(arr);
+}
+
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $(id).classList.add("active");
+}
+
+let revealed = false;
+function loadPlayer() {
+  revealed = false;
+  $("cardInner").classList.remove("revealed");
+  $("nextBtn").classList.remove("show");
+  $("passWho").textContent = "把手机传给第 " + (idx+1) + " 个人";
+  $("passProg").textContent = "共 " + deck.length + " 人 · 还剩 " + (deck.length - idx) + " 人未看";
+  const card = deck[idx];
+  const back = $("cardBack");
+  const content = $("backContent");
+  if (card === "king") {
+    back.classList.add("king");
+    content.innerHTML = '<div class="king-crown">👑</div>'+
+      '<div class="king-txt">你是国王！</div>'+
+      '<div class="king-sub">记住你是国王。等所有人看完，由你来发号施令，指定几号做什么。</div>';
+  } else {
+    back.classList.remove("king");
+    content.innerHTML = '<div class="my-num">'+card+'</div>'+
+      '<div class="num-label">这是你的号码，记住它</div>';
+  }
+}
+
+function flipCard() {
+  if (revealed) return;
+  revealed = true;
+  $("cardInner").classList.add("revealed");
+  setTimeout(()=>$("nextBtn").classList.add("show"), 450);
+}
+
+function nextPlayer() {
+  $("cardInner").classList.remove("revealed");
+  $("nextBtn").classList.remove("show");
+  idx++;
+  if (idx >= deck.length) setTimeout(showKing, 300);
+  else setTimeout(loadPlayer, 300);
+}
+
+function showKing() {
+  showScreen("kingScreen");
+  $("maxNum").textContent = maxNum;
+  $("orderCard").innerHTML = "点下面按钮，抽一条指令";
+}
+
+// 抽指令：随机选单人或双人，替换号码
+function drawOrder() {
+  const usePair = maxNum >= 2 && Math.random() < 0.6;
+  let tpl, text;
+  if (usePair) {
+    tpl = ORDERS_PAIR[Math.floor(Math.random()*ORDERS_PAIR.length)];
+    // 抽两个不同号码
+    let a = 1 + Math.floor(Math.random()*maxNum);
+    let b = 1 + Math.floor(Math.random()*maxNum);
+    while (b === a) b = 1 + Math.floor(Math.random()*maxNum);
+    text = tpl.replace("{A}", '<span class="num-tag">'+a+'</span>')
+              .replace("{B}", '<span class="num-tag">'+b+'</span>');
+  } else {
+    tpl = ORDERS_SINGLE[Math.floor(Math.random()*ORDERS_SINGLE.length)];
+    let a = 1 + Math.floor(Math.random()*maxNum);
+    text = tpl.replace("{A}", '<span class="num-tag">'+a+'</span>');
+  }
+  $("orderCard").innerHTML = text;
+}
+
+function start() {
+  deck = buildDeck();
+  idx = 0;
+  showScreen("passScreen");
+  loadPlayer();
+}
+
+$("startBtn").onclick = start;
+$("cardFlip").onclick = flipCard;
+$("nextBtn").onclick = nextPlayer;
+$("drawBtn").onclick = drawOrder;
+$("newRoundBtn").onclick = start;
+$("backToSetupBtn").onclick = () => showScreen("setupScreen");
+
+$("valPlayers").textContent = players;
+
+</script>
+</body>
+</html>
